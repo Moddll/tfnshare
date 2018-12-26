@@ -73,7 +73,7 @@ class RwDatabase:
     # get data from sqlite database
     def get_sqltable(self, tblname):
         conn = sqlite3.connect(self.__db)  # Using the connect function which returns a Connection object
-        cur = conn.cursor() # create a cursor object which allow to execute SQL queries against a databse
+        cur = conn.cursor()  # create a cursor object which allow to execute SQL queries against a databse
         # cur.execute(sqlflt)
         # results = cur.fetchall()
         data_results = pd.read_sql_table(tblname, conn)
@@ -98,11 +98,46 @@ class RwDatabase:
         return cur.lastrowid
 
 
+class FormatStockData:
+    def __init__(self, db: str):
+        self._db = db
+
+    # Return stock data with 5, 10, 20 days moving average data
+    def ma_stockdata(self, symbol):
+
+        dbc = RwDatabase(self._db)
+
+        sqlflt_str = "select * from " + symbol + " Order By Date"
+        sql_data = dbc.read_sqldata(sqlflt_str)
+
+        df = pd.DataFrame()
+        df['date'] = sql_data['Date']
+        df['open'] = sql_data['Open']
+        df['high'] = sql_data['High']
+        df['low'] = sql_data['Low']
+        df['close'] = sql_data['Close']
+        df['volume'] = sql_data['Volume']
+        df['change'] = df['close'] - df['close'].shift(1)
+        df['ma5'] = df['close'].rolling(window=5, center=False).mean()
+        df['ma10'] = df['close'].rolling(window=10, center=False).mean()
+        df['ma20'] = df['close'].rolling(window=20, center=False).mean()
+        df['v_ma5'] = df['volume'].rolling(window=5, center=False).mean()
+        df['v_ma10'] = df['volume'].rolling(window=10, center=False).mean()
+        df['v_ma20'] = df['volume'].rolling(window=20, center=False).mean()
+        df['symbol'] = symbol
+
+        df = df.dropna()
+        ma_data = df
+
+        return ma_data
+
+
+
 if __name__ == "__main__":
 
     # 获取公司的股价
     lstNoData = []
-    symbol = "AXC"
+    symbol = "GET"
     symbol_array = symbol + ".CN"
     sDate = "2018-01-01"
     eDate = dt.datetime.today().strftime("%Y-%m-%d")
@@ -116,7 +151,7 @@ if __name__ == "__main__":
         stockdata["Date"] = stockdata["Date"].dt.strftime("%Y-%m-%d")
 
     # print(stockdata[stockdata.Volume > 500000])
-    print(stockdata)
+    print(stockdata.tail(1))
     print("No Data list: ", lstNoData)
 
     # write data:  SQL语句，插入记录:
