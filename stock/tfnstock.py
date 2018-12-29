@@ -23,7 +23,7 @@ class GetStock:
         # print("this is: %s " % self.__symbol)
         print("Variable is ('%s', %s ,%s)" % (self.__symbol, self.__start_date, self.__end_date))
 
-    def get_price(self) -> None:
+    def get_price(self) -> pd.DataFrame:
         yf.pdr_override()
         stockdata = pd.DataFrame()
         try:
