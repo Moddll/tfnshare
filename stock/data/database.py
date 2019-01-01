@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 import sqlite3
 import pandas as pd
 import re
@@ -136,7 +137,7 @@ class MetadataDatabase(RwDatabase):
         self._ensure_open()
         return pd.read_sql('select * from exchange_list', self._conn)
 
-    def write_exchange_update_date(self, exchange: str, date: str) -> None:
+    def write_exchange_update_date(self, exchange: str, date: Optional[str]) -> None:
         """
         Updates the last update entry in the database
         :param exchange:

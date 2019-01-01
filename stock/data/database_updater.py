@@ -1,5 +1,5 @@
-from stock.database import MetadataDatabase, ExchangeDatabase
-from typing import Optional
+from stock.data.database import MetadataDatabase, ExchangeDatabase
+from typing import Optional, List
 import fix_yahoo_finance as yf
 from itertools import repeat
 import datetime as dt
@@ -9,7 +9,26 @@ from multiprocessing.dummy import Pool
 from multiprocessing import Process, Manager, Queue
 
 
-def update_database(exchange: str, start_date: str = None, threads: int = 1, multiprocess_write: bool = False, verbose: bool = False) -> None:
+def update_database(exchange: str, start_date: str = None, threads: int = 16, multiprocess_write: bool = True, verbose: bool = False) -> None:
+    """
+    Updates the database corresponding to exchange. Multi-threaded and multiprocess Write
+    highly suggested.
+    :param exchange:
+        The exchange for which data should be updated
+    :param start_date:
+        The starting date for updating the database. Defaults to the
+        last time the database was updated, or 1970-01-01, if the database
+        was never updated before
+    :param threads:
+        Number of threads to use. If set to 1, multithreading is disabled.
+        Default: 16
+    :param multiprocess_write:
+        Whether or not to use a seperate process for writing the data.
+        Default: True
+    :param verbose:
+        Whether or not to print the task that is currently being processed.
+        Default: False
+    """
     with MetadataDatabase() as metadb:
         metadata = metadb.get_exchange_metadata(exchange)
         if metadata is None:
@@ -46,6 +65,38 @@ def update_database(exchange: str, start_date: str = None, threads: int = 1, mul
                 _write_queue(q, exchange, ext, verbose)
 
         metadb.write_exchange_update_date(exchange, dt.datetime.today().strftime('%Y-%m-%d'))
+
+
+def update_database_multi(exchanges: List[str], start_date: str = None, threads: int = 16, multiprocess_write: bool = True, verbose: bool = False) -> None:
+    """
+    Updates the database for each exchange. Multi-threaded and multiprocess Write
+    highly suggested.
+    :param exchanges:
+        The exchanges for which data should be updated
+    :param start_date:
+        The starting date for updating the database. Defaults to the
+        last time the database was updated, or 1970-01-01, if the database
+        was never updated before
+    :param threads:
+        Number of threads to use. If set to 1, multithreading is disabled.
+        Default: 16
+    :param multiprocess_write:
+        Whether or not to use a seperate process for writing the data.
+        Default: True
+    :param verbose:
+        Whether or not to print the task that is currently being processed.
+        Default: False
+    """
+    for exchange in exchanges:
+        update_database(exchange, start_date, threads, multiprocess_write, verbose)
+
+
+def clear_update_record(exchange: str) -> None:
+    """
+    Clears the last updated date of exchange
+    """
+    with MetadataDatabase() as metadb:
+        metadb.write_exchange_update_date(exchange, None)
 
 
 def _write_queue(q: Queue, exchange: str, ext: str, verbose: bool = False) -> None:
@@ -95,4 +146,4 @@ def _download(symbol: str, start: int, end: int, q: Queue = None,
 
 if __name__ == '__main__':
     import timeit
-    print(timeit.timeit("update_database('nyse', start_date=None, threads=20, multiprocess_write=True, verbose=True)", number=1, globals=globals()))
+    # print(timeit.timeit("update_database('nyse', start_date=None, threads=20, multiprocess_write=True, verbose=True)", number=1, globals=globals()))
