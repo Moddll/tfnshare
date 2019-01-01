@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Union, Tuple
 import sqlite3
 import pandas as pd
 import re
@@ -127,15 +127,16 @@ class MetadataDatabase(RwDatabase):
             df = self.get_company_list(exchange)
         return df['symbol']
 
-    def get_exchange_list(self) -> pd.DataFrame:
+    def get_exchange_list(self) -> Tuple[str]:
         """
-        Returns the exchange_list table which includes a list of the exchange and
-        the last time it was updated
+        Returns a list of exchanges
         :return:
         A pandas DataFrame containing the data.
         """
         self._ensure_open()
-        return pd.read_sql('select * from exchange_list', self._conn)
+        self._cur.execute('select Name from exchange_list')
+        res = self._cur.fetchall()
+        return next(zip(*res)) if res else []
 
     def write_exchange_update_date(self, exchange: str, date: Optional[str]) -> None:
         """
@@ -150,19 +151,24 @@ class MetadataDatabase(RwDatabase):
             raise ValueError("Exchange Must Be Alphabetic")
         self._cur.execute("update exchange_list set last_update=? where Name=?", (date, exchange))
 
-    def get_exchange_metadata(self, exchange: str) -> tuple:
+    def get_exchange_metadata(self, exchange: str = None) -> Union[pd.DataFrame, tuple]:
         """
-        Returns the metadata associated with exchange ex
+        Returns the metadata associated with exchange, or with all exchanges
+        if exchange is not specified
         :param exchange:
         Exchange for which metadata should be obtained
         :return:
-        A tuple containing the metadata
+        A tuple containing the metadata if exchange is specified
+        or a pandas DataFrame containing the metadata of all exchanges
         """
         self._ensure_open()
-        if not exchange.isalpha():
-            raise ValueError("Exchange Must Be Alphabetic")
-        self._cur.execute('select * from exchange_list where Name = ?;', (exchange,))
-        return self._cur.fetchone()
+        if exchange is None:
+            return pd.read_sql('select * from exchange_list', self._conn)
+        else:
+            if not exchange.isalpha():
+                raise ValueError("Exchange Must Be Alphabetic")
+            self._cur.execute('select * from exchange_list where Name = ?;', (exchange,))
+            return self._cur.fetchone()
 
 
 class ExchangeDatabase(RwDatabase):
@@ -192,8 +198,8 @@ class ExchangeDatabase(RwDatabase):
         A pandas DataFrame containing the symbol data
         """
         self._ensure_open()
-        if not symbol.isalnum():
-            raise ValueError("Symbol Must Be Alphanumeric")
+        if not re.fullmatch('[a-zA-Z0-9.]+', symbol):
+            raise ValueError("Symbol Must Be Alphanumeric or '.' and non empty")
         if start_date is not None and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', start_date):
             raise ValueError("Start Date must be in the format yyyy-mm-dd")
         if end_date is not None and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', end_date):
