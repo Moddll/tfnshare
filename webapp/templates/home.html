@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Home Page{% endblock %}
+{% block pageheader %}Stock List {% endblock %}
+
+{% block body %}
+    <h1 >Table</h1>
+    <button type="button" id="test" class="btn btn-primary">Primary</button>
+    <div id="toolbar"></div>
+    <table
+      id="table"
+      data-toggle="true"
+      data-toolbar="#toolbar"
+      data-search="true"
+      data-show-columns="true"
+      data-pagination="true"
+      data-height="500">
+         <thead>
+    <tr>
+        <th data-field="symbol"  data-sortable="true">Symbol</th>
+        <th data-field="company" data-sortable="true">Company</th>
+        <th data-field="industry" data-sortable="true">Industry</th>
+        <th data-field="list_date" data-sortable="true">List Date</th>
+    </tr>
+    </thead>
+    </table>
+
+{% endblock %}
+
+{% block script%}
+    <script>
+
+    var data = {{corplist | tojson}};
+
+    $(window).ready(function(){
+        $('#table').bootstrapTable({
+            data: data
+        });
+    });
+    </script>
+{% endblock %}
