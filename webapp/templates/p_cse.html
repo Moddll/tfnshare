@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Policy CSE{% endblock %}
+{% block pageheader %}Policy {% endblock %}
+
+{% block body %}
+    <h1 >Table</h1>
+    <button type="button" id="test" class="btn btn-primary">Primary</button>
+    <div id="toolbar"></div>
+    <table
+      id="table"
+      data-toggle="true"
+      data-toolbar="#toolbar"
+      data-search="true"
+      data-show-columns="true"
+      data-pagination="true"
+      data-height="500">
+         <thead>
+    <tr>
+        <th data-field="symbol"  data-sortable="true">Symbol</th>
+        <th data-field="date"  data-sortable="true">Date</th>
+        <th data-field="open" data-sortable="true">Open</th>
+        <th data-field="high" data-sortable="true">High</th>
+        <th data-field="low" data-sortable="true">Low</th>
+        <th data-field="close" data-sortable="true">Close</th>
+        <th data-field="volume" data-sortable="true">Volume</th>
+        <th data-field="change" data-sortable="true">P_change</th>
+        <th data-field="ma5" data-sortable="true">ma5</th>
+        <th data-field="ma10" data-sortable="true">ma10</th>
+        <th data-field="ma20" data-sortable="true">ma20</th>
+        <th data-field="v_ma5" data-sortable="true">v_ma5</th>
+        <th data-field="v_ma10" data-sortable="true">v_ma10</th>
+        <th data-field="v_ma20" data-sortable="true">v_ma20</th>
+        <th data-field="company" data-sortable="true">company</th>
+        <th data-field="list_date" data-sortable="true">List_Date</th>
+    </tr>
+    </thead>
+    </table>
+    <h1>Chart</h1>
+    <div id="tester" style="width:1200px;height:600px;"></div>
+    <div id="tester1" style="width:1200px;height:600px;"></div>
+
+{% endblock %}
+
+{% block script%}
+    <script>
+
+    var data = {{ csestock | tojson}};
+
+    $(window).ready(function(){
+        $('#table').bootstrapTable({
+            data: data
+        });
+    });
+
+
+    TESTER = document.getElementById('tester');
+    TESTER1 = document.getElementById('tester1');
+
+    // # simple plot chart
+    Plotly.plot( TESTER ,
+        [{
+          x: data.map((d) => d.date),
+          y: data.map((d) => d.close)
+        }],
+        {
+           margin: { t: 0 }
+        }
+    )
+
+
+    // # Candlestick Chart
+    Plotly.d3.json(data, function(err, rows){
+
+        var trace = {
+          x: data.map((d) => d.date),
+          close: data.map((d) => d.close),
+          high: data.map((d) => d.high),
+          low: data.map((d) => d.low),
+          open: data.map((d) => d.open),
+
+          // cutomise colors
+          increasing: {line: {color: 'green'}},
+          decreasing: {line: {color: 'red'}},
+
+          type: 'candlestick',
+          // xaxis: 'x',
+          yaxis: 'y'
+        };
+
+        var trace2 ={
+          x: data.map((d) => d.date),
+          y:data.map((d) => d.volume),
+            xaxis: 'x',
+            yaxis: 'y2',
+            type: 'bar'
+
+        };
+
+        var data1 = [trace, trace2];
+
+        var layout = {
+            grid:{
+                rows: 2,
+                columns: 1,
+                subplots: [['xy'],['xy2']],
+                roworder: 'top to bottom'
+            },
+            dragmode: 'zoom',
+            showlegend: false,
+            xaxis: {
+                title: 'Date',
+                // range: ['2018-01-01', '2018-12-15'],
+                rangeslider: {
+                     // range: ['2018-01-01', '2018-12-15']}
+                     visible: false
+                 }
+            },
+            yaxis: {
+              autorange:true,
+            }
+        };
+
+        Plotly.plot( 'tester1', data1, layout);
+    });
+
+    </script>
+{% endblock %}
