@@ -86,7 +86,7 @@ class RwDatabase:
         conn = sqlite3.connect(self.__db)  # Using the connect function which returns a Connection object
         cur = conn.cursor()  # create a cursor object which allow to execute SQL queries against a databse
         # 执行一条SQL语句，插入一条记录:
-        # "insert into catalog values (?,?,?,?)", t
+            # "insert into catalog values (?,?,?,?)", t
         # df1.to_sql('users', con=engine, if_exists='append')
         # _wsql = "insert into " + tblname + " values (?,?,?,?)"
         df1 = tbldata

@@ -1,7 +1,7 @@
 # Get Stock daily share price and update into database
 # import pandas as pd
 import datetime as dt
-from multiprocessing.dummy import Pool
+from multiprocessing import Pool
 from multiprocessing.dummy import Process
 from itertools import repeat
 from queue import Queue
@@ -17,7 +17,7 @@ def main():
     db = '../findata/nyse.db'
     # db = '../findata/amex.db'
     # db = '../findata/tsxv.db'
-    sqlflt = 'select * from companylist;'
+    sqlflt = 'select * from amex;'
 
     sDate = '2015-01-01'
     eDate = dt.datetime.today().strftime('%Y-%m-%d')

@@ -18,7 +18,7 @@ db = '../findata/cse.db'
 dbc = RwDatabase(db)
 
 # Get Company List
-sqlflt = "select * from companylist;"
+sqlflt = "select * from amex;"
 lstCompany = dbc.read_sqldata(sqlflt)
 symbol_array = lstCompany['symbol']
 
