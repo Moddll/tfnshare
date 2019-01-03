@@ -1,6 +1,7 @@
 from typing import Iterable, Dict, Union, Tuple
 import pandas as pd
 from stock.data.database import MetadataDatabase, ExchangeDatabase
+import atexit
 
 databases: Dict[str, Union[MetadataDatabase, ExchangeDatabase]] = {}
 data: Dict[str, Union[tuple, pd.DataFrame]] = {}
@@ -8,7 +9,7 @@ data: Dict[str, Union[tuple, pd.DataFrame]] = {}
 
 def get_data(exchange: str, symbol: str, start_date: str = '0000-00-00', end_date: str = '9999-99-99') -> pd.DataFrame:
     """
-    Returns the stock data of symbol in exchange from start_date to end_date
+    Returns the stock data of symbol in exchange from start_date to end_date inclusive
     :return:
     A pandas DataFrame containing the data
     """
@@ -59,5 +60,14 @@ def get_company_list(exchange: str) -> pd.DataFrame:
     return data['cplist' + exchange]
 
 
+@atexit.register
+def _cleanup():
+    """
+    Closes all databases. Should not be called manually and only invoked on exit
+    """
+    for db in databases.values():
+        db.close()
+
+
 if __name__ == '__main__':
-    print(get_company_list('nyse'))
+    print(get_data('nyse', 'DDD', '2015-02-13', '2018-11-21'))
