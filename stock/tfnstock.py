@@ -90,7 +90,7 @@ class RwDatabase:
         # df1.to_sql('users', con=engine, if_exists='append')
         # _wsql = "insert into " + tblname + " values (?,?,?,?)"
         df1 = tbldata
-        df1.to_sql(tblname, con=conn, if_exists='append', index=False)
+        df1.to_sql(tblname, con=conn, if_exists='replace', index=False)
         # cur.execute(_wsql, tbldata)
         # cur.commit()
         cur.close()
