@@ -14,7 +14,7 @@ def get_data(exchange: str, symbol: str, start_date: str = '0000-00-00', end_dat
     A pandas DataFrame containing the data
     """
     if exchange not in databases:
-        databases[exchange] = ExchangeDatabase(exchange)
+        databases[exchange] = ExchangeDatabase(exchange, check_same_thread=False)
     if exchange + '/' + symbol not in data:
         data[exchange + '/' + symbol] = databases[exchange].read_stock_data(symbol)
     df = data[exchange + '/' + symbol]
@@ -54,7 +54,7 @@ def get_company_list(exchange: str) -> pd.DataFrame:
     A pandas DataFrame containing the companylist table
     """
     if 'meta' not in databases:
-        databases['meta'] = MetadataDatabase()
+        databases['meta'] = MetadataDatabase(check_same_thread=False)
     if 'cplist' + exchange not in data:
         data['cplist' + exchange] = databases['meta'].get_company_list(exchange)
     return data['cplist' + exchange]

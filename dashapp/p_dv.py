@@ -1,6 +1,7 @@
 # Policy:  Check Unusual Daily Volume
 import dash
-
+from stock.tfnstock import RwDatabase
+from stock.tfnstock import FormatStockData
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
@@ -8,17 +9,21 @@ import dash_table
 
 import pandas as pd
 
-from stock.tfnstock import RwDatabase
-from stock.tfnstock import FormatStockData
+from stock.data import data_manager
 
 # set database
 db = '../findata/cse.db'
 dbc = RwDatabase(db)
-file = '../stock/policy/madata.csv'
+file = './stock/policy/madata.csv'
+
+# data_manager.get_company_list('ces')
+# data_manager.get_data('ces', 'ABJ')
+# data_manager.get_data_multi({'ces': ['ABJ', 'ACG', 'ADX'], 'nyse': ['APPL']})
 
 # Get Company List
-sqlflt = "select * from amex;"
-lstCompany = dbc.read_sqldata(sqlflt)
+# sqlflt = "select * from companylist;"
+# lstCompany = dbc.read_sqldata(sqlflt)
+lstCompany = data_manager.get_company_list('cse')
 symbol_array = lstCompany['symbol']
 
 dp_options_list = []
@@ -40,7 +45,7 @@ data = pd.read_csv(file, sep='\t', encoding='utf-8', index_col=False)
 # Cleaning, sort and format dataframe
 data = data[data.change > 0]
 data = data.sort_values(['v_change', 'change'], ascending=[False, False])
-data['volume'] = data['volume'].map('{:,.0f}'.format)
+data['Volume'] = data['Volume'].map('{:,.0f}'.format)
 data['v_change'] = data['v_change'].map('{:,.0f}'.format)
 data['v_ma5'] = data['v_ma5'].map('{:,.0f}'.format)
 data['v_ma10'] = data['v_ma10'].map('{:,.0f}'.format)
@@ -63,8 +68,16 @@ dash_head = html.Div([
             #               multi=True,
             #               style={'display': 'inline-block', 'fontSize': 24, 'width': 75}
             #     ),
+            dcc.Dropdown(
+                options=[
+                    {'label': 'CSE Exchange', 'value': 'cse'},
+                    {'label': 'TSX Venture', 'value': 'tsxv'}
+                ],
+                value='cse'
+            ),
+            dcc.Markdown(''' --- ''')
             # ], style={'display': 'inline-block', 'verticalAlign': 'top', 'width': '30%'})
-], className='row')
+], className='.col-12')
 
 dash_table = html.Table([
     dash_table.DataTable(
@@ -128,20 +141,24 @@ def update_graph(rows, derived_virtual_selected_rows):
     elif derived_virtual_selected_rows:
         selected_symbol = rows[derived_virtual_selected_rows[0]]['symbol']
         plot_title = rows[derived_virtual_selected_rows[0]]['company']
+        print(selected_symbol)
         # Get stock data from database
         madata = pd.DataFrame()
         formatdata = FormatStockData(db)
-        madata = formatdata.ma_stockdata(selected_symbol)
+        madata = formatdata.ma_stockdata('cse', selected_symbol)
+        # madata = data_manager.get_data('cse', selected_symbol)
+        # madata = madata.reset_index()
+        # print(madata)
         madata['color_label'] = 'green'
-        madata.loc[madata.close < madata.open, 'color_label'] = 'red'
-        madata.loc[madata.close >= madata.open, 'color_label'] = 'green'
+        madata.loc[madata.Close < madata.Open, 'color_label'] = 'red'
+        madata.loc[madata.Close >= madata.Open, 'color_label'] = 'green'
 
     trace1 = {
-        'x': madata.date,
-        'open': madata.open,
-        'high': madata.high,
-        'low':  madata.low,
-        'close': madata.close,
+        'x': madata.index,
+        'open': madata.Open,
+        'high': madata.High,
+        'low':  madata.Low,
+        'close': madata.Close,
         'name': 'price',
         'increasing': {'line': {'color': 'green'}},
         'decreasing': {'line': {'color': 'red'}},
@@ -149,7 +166,8 @@ def update_graph(rows, derived_virtual_selected_rows):
     }
 
     trace2 = {
-        'x': madata.date,
+        # 'x': madata.date,
+        'x': madata.index,
         'y': madata.ma5,
         'xaxis': 'x',
         'yaxis': 'y',
@@ -158,7 +176,8 @@ def update_graph(rows, derived_virtual_selected_rows):
     }
 
     trace3 = {
-        'x': madata.date,
+        # 'x': madata.date,
+        'x': madata.index,
         'y': madata.ma20,
         'xaxis': 'x',
         'yaxis': 'y',
@@ -168,8 +187,9 @@ def update_graph(rows, derived_virtual_selected_rows):
     }
 
     trace4 = {
-        'x': madata.date,
-        'y': madata.volume,
+        # 'x': madata.date,
+        'x': madata.index,
+        'y': madata.Volume,
         'xaxis': 'x',
         'yaxis': 'y2',
         'name': 'Volume',
@@ -233,5 +253,5 @@ def update_graph(rows, derived_virtual_selected_rows):
 
 if __name__ == "__main__":
 
-    # print(madata1.tail())
+    # print(madata.tail())
     app.run_server(debug=True)
