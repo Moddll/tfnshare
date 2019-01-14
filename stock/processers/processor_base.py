@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Hashable
 from typing import Dict, Iterable, Optional
 from stock.data.database import RwDatabase
-from sqlite3 import Cursor
 import pandas as pd
 import atexit
 

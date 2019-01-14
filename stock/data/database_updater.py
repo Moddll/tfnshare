@@ -44,6 +44,7 @@ def update_database(exchange: str, start_date: str = None, threads: int = 16, mu
         if start >= end:
             return
         symbols = metadb.get_symbols(exchange)
+        symbols = map(lambda x: str.replace(x, '.', '-'), symbols)
         if threads is None or threads < 2:
             with ExchangeDatabase(exchange) as exdb:
                 for item in zip(symbols, map(lambda *args: _download(*args, start=start, end=end, verbose=verbose), map(''.join, zip(symbols, repeat('.' + ext))) if ext else list(symbols))):

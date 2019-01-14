@@ -1,10 +1,10 @@
-from stock.processers.processor_base import BufferedProcessorBase
+from stock.processers.processor_base import ProcessorBase
 import pandas as pd
 from typing import Union, List, Any, Dict, Optional
 from stock.data.database import RwDatabase
 
 
-class MovingAverageProcessor(BufferedProcessorBase):
+class MovingAverageProcessor(ProcessorBase):
     days: Union[str, int]
     column: str
     args: List[Any]
@@ -24,7 +24,7 @@ class MovingAverageProcessor(BufferedProcessorBase):
         Volume
         """
         if not self.initialized:
-            BufferedProcessorBase.__init__(self)
+            ProcessorBase.__init__(self)
             self.days = days
             self.column = column
             self.args = args
@@ -38,28 +38,6 @@ class MovingAverageProcessor(BufferedProcessorBase):
         """
         return data[self.column].rolling(self.days, *self.args, **self.kwargs).mean().to_frame().rename(columns={"Close": f"ma{self.days}_{self.column.lower()}"})
 
-    def _read(self, db: RwDatabase, tblname: str) -> Optional[pd.DataFrame]:
-        """
-        Read the stored data from db and table tblname
-        :return:
-        A pandas DataFrame containing the data or None if the table
-        does not have the data
-        """
-        if db.have_column(tblname, f"ma{self.days}_{self.column.lower()}"):
-            res = db.read_column(tblname, ['Date', f"ma{self.days}_{self.column.lower()}"])
-            res.set_index('Date', inplace=True)
-            return res
-
-    def _write(self, db: RwDatabase, tblname: str, data: pd.DataFrame) -> None:
-        """
-        Write data into the table tblname of cur if needed
-
-        Precondition:
-        table tblname exists
-        """
-        db.write_columns(tblname, data)
-
 
 if __name__ == '__main__':
-    print(MovingAverageProcessor(5, 'Close').get_data('nyse', 'A'))
-    MovingAverageProcessor(5, 'Close').get_data('nyse', 'A')
+    print(MovingAverageProcessor(5, 'Close').get_data('tsxv', 'AIMC-P'))

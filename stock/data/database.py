@@ -19,7 +19,7 @@ class RwDatabase:
     _conn: sqlite3.Connection
     _cur: sqlite3.Cursor
 
-    def __init__(self, db_path: str, db_name: str, open_db: bool = True):
+    def __init__(self, db_path: str, db_name: str, open_db: bool = True, *args, **kwargs):
         """
         Creates a base database object
         :param db_path:
@@ -28,6 +28,10 @@ class RwDatabase:
         Name of database
         :param open_db:
         Auto-open the database on creation. Default True.
+        :param *args:
+        Additional argument to pass to open
+        :param **kwargs:
+        Additional keyword argument to pass to open
         """
         if not os.path.exists(db_path):
             os.makedirs(db_path)
@@ -36,15 +40,19 @@ class RwDatabase:
         self._cur = None
 
         if open_db:
-            self.open()
+            self.open(*args, **kwargs)
 
-    def open(self) -> None:
+    def open(self, *args, **kwargs) -> None:
         """
         Opens the connection to database. If a connection is already open,
         nothing is done.
+        :param *args:
+        Additional argument to pass to open
+        :param **kwargs:
+        Additional keyword argument to pass to open
         """
         if not self.is_open():
-            self._conn = sqlite3.connect(self._db)
+            self._conn = sqlite3.connect(self._db, *args, **kwargs)
             self._cur = self._conn.cursor()
 
     def close(self, commit=True, close=True) -> None:
@@ -174,7 +182,7 @@ class RwDatabase:
 
 class MetadataDatabase(RwDatabase):
 
-    def __init__(self, db_path: str = 'findata/', db_name = 'metadata.db', open_db: bool = True):
+    def __init__(self, db_path: str = 'findata/', db_name = 'metadata.db', open_db: bool = True, *args, **kwargs):
         """
         Creates a base database object
         :param db_path:
@@ -183,8 +191,12 @@ class MetadataDatabase(RwDatabase):
         Name of database
         :param open_db:
         Auto-open the database on creation. Default True.
+        :param *args:
+        Additional argument to pass to open
+        :param **kwargs:
+        Additional keyword argument to pass to open
         """
-        RwDatabase.__init__(self, db_path, db_name, open_db)
+        RwDatabase.__init__(self, db_path, db_name, open_db, *args, **kwargs)
 
     def get_company_list(self, exchange: str) -> pd.DataFrame:
         """
@@ -194,8 +206,8 @@ class MetadataDatabase(RwDatabase):
         A pandas DataFrame containing the companylist table
         """
         self._ensure_open()
-        if not exchange.isalpha():
-            raise ValueError("Exchange Must Be Alphabetic")
+        # if not exchange.isalpha():
+        #     raise ValueError("Exchange Must Be Alphabetic")
         return pd.read_sql('select * from \"{}\";'.format(exchange.lower()), self._conn)
 
     def get_symbols(self, exchange: str, df: pd.DataFrame = None) -> pd.Series:
@@ -232,8 +244,8 @@ class MetadataDatabase(RwDatabase):
         Last update date
         """
         self._ensure_open()
-        if not exchange.isalpha():
-            raise ValueError("Exchange Must Be Alphabetic")
+        # if not exchange.isalpha():
+        #     raise ValueError("Exchange Must Be Alphabetic")
         self._cur.execute("update exchange_list set last_update=? where Name=?", (date, exchange))
 
     def get_exchange_metadata(self, exchange: str = None) -> Union[pd.DataFrame, tuple]:
@@ -250,14 +262,14 @@ class MetadataDatabase(RwDatabase):
         if exchange is None:
             return pd.read_sql('select * from exchange_list', self._conn)
         else:
-            if not exchange.isalpha():
-                raise ValueError("Exchange Must Be Alphabetic")
+            # if not exchange.isalpha():
+            #     raise ValueError("Exchange Must Be Alphabetic")
             self._cur.execute('select * from exchange_list where Name = ?;', (exchange,))
             return self._cur.fetchone()
 
 
 class ExchangeDatabase(RwDatabase):
-    def __init__(self, exchange: str, open_db: bool = True, path='findata/'):
+    def __init__(self, exchange: str, open_db: bool = True, path='findata/', *args, **kwargs):
         """
         Creates a exchange database object
 
@@ -267,8 +279,12 @@ class ExchangeDatabase(RwDatabase):
         Path to database. Default: 'findata/
         :param open_db:
         Auto-open the database on creation. Default True.
+        :param *args:
+        Additional argument to pass to open
+        :param **kwargs:
+        Additional keyword argument to pass to open
         """
-        RwDatabase.__init__(self, path, exchange.lower() + '.db', open_db)
+        RwDatabase.__init__(self, path, exchange.lower() + '.db', open_db, *args, **kwargs)
 
     def ensure_table(self, table: str, cols: Dict[str, str] = {'Date': 'TEXT', 'Open': 'REAL', 'High': 'REAL', 'Low': 'REAL', 'Close': 'REAL', 'Adj Close': 'REAL', 'Volume': 'INTEGER'}) -> None:
         """
@@ -289,13 +305,13 @@ class ExchangeDatabase(RwDatabase):
         A pandas DataFrame containing the symbol data
         """
         self._ensure_open()
-        if not re.fullmatch('[a-zA-Z0-9.]+', symbol):
-            raise ValueError("Symbol Must Be Alphanumeric or '.' and non empty")
-        if start_date is not None and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', start_date):
-            raise ValueError("Start Date must be in the format yyyy-mm-dd")
-        if end_date is not None and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', end_date):
-            raise ValueError("End Date must be in the format yyyy-mm-dd")
-
+        # if not re.fullmatch('[a-zA-Z0-9.]+', symbol):
+        #     raise ValueError("Symbol Must Be Alphanumeric or '.' and non empty")
+        # if start_date is not None and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', start_date):
+        #     raise ValueError("Start Date must be in the format yyyy-mm-dd")
+        # if end_date is not None and not re.fullmatch(r'\d{4}-\d{2}-\d{2}', end_date):
+        #     raise ValueError("End Date must be in the format yyyy-mm-dd")
+        symbol = symbol.strip()
         if start_date is None and end_date is None:
             res = pd.read_sql('select * from \"{}\";'
                                .format(symbol), self._conn)
@@ -324,8 +340,8 @@ class ExchangeDatabase(RwDatabase):
         if df.empty:
             return
         self._ensure_open()
-        if not symbol.isalnum():
-            raise ValueError("Symbol Must Be Alphanumeric")
+        # if not symbol.isalnum():
+        #     raise ValueError("Symbol Must Be Alphanumeric")
         self.ensure_table(symbol)
         self._cur.execute('SELECT max(date) from \"{}\"'.format(symbol))
         last_date = self._cur.fetchone()[0]
