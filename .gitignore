@@ -1,4 +1,5 @@
 /findata
+!/findata/metadata.db
 /comdata
 /venv
 /webapp

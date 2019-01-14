@@ -146,4 +146,4 @@ def _download(symbol: str, start: int, end: int, q: Queue = None,
 
 if __name__ == '__main__':
     import timeit
-    # print(timeit.timeit("update_database('nyse', start_date=None, threads=20, multiprocess_write=True, verbose=True)", number=1, globals=globals()))
+    print(timeit.timeit("update_database('tsxv', start_date=None, threads=20, multiprocess_write=True, verbose=True)", number=1, globals=globals()))

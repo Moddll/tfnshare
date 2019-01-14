@@ -174,7 +174,7 @@ class RwDatabase:
 
 class MetadataDatabase(RwDatabase):
 
-    def __init__(self, db_path: str = 'findata', db_name = 'metadata.db', open_db: bool = True):
+    def __init__(self, db_path: str = 'findata/', db_name = 'metadata.db', open_db: bool = True):
         """
         Creates a base database object
         :param db_path:
@@ -326,7 +326,7 @@ class ExchangeDatabase(RwDatabase):
         self._ensure_open()
         if not symbol.isalnum():
             raise ValueError("Symbol Must Be Alphanumeric")
-        self._ensure_table(symbol)
+        self.ensure_table(symbol)
         self._cur.execute('SELECT max(date) from \"{}\"'.format(symbol))
         last_date = self._cur.fetchone()[0]
         self._cur.execute('SELECT min(date) from \"{}\"'.format(symbol))
